@@ -29,6 +29,11 @@ export type LeadInsert = {
   status?: string;
   agente?: string | null;
   updated_at?: string;
+  proprietario_veiculo?: string | null;
+  cpf_proprietario_veiculo?: string | null;
+  placa_veiculo?: string | null;
+  tipo_consorcio?: string | null;
+  tempo_registro_clt?: string | null;
 };
 
 export type Lead = LeadInsert & {

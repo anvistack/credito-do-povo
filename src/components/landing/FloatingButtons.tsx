@@ -4,7 +4,7 @@ export function FloatingButtons({ onFormClick }: Props) {
   return (
     <>
       <a
-        href="https://wa.me/5511999999999?text=Ol%C3%A1!%20Quero%20saber%20sobre%20cr%C3%A9dito."
+        href="https://wa.me/551698119500?text=Ol%C3%A1!%20Quero%20saber%20sobre%20cr%C3%A9dito."
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Falar no WhatsApp"

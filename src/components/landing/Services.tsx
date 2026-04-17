@@ -7,6 +7,9 @@ const SERVICES = [
   { emoji: "♻️", title: "Refinanciamento", desc: "Renove seu contrato, otimize parcelas e ganhe fôlego no orçamento." },
   { emoji: "🔄", title: "Portabilidade", desc: "Migre seu empréstimo e pague menos juros." },
   { emoji: "💳", title: "Cartão Consignado", desc: "Cartão exclusivo com desconto em folha." },
+  { emoji: "🚗", title: "Seguro Veicular", desc: "Proteção completa para o seu veículo, com cotações personalizadas." },
+  { emoji: "🤝", title: "Consórcio", desc: "Realize sonhos sem juros: veículo, imóvel e muito mais." },
+  { emoji: "💰", title: "Saque FGTS", desc: "Antecipe seu saque-aniversário do FGTS de forma rápida e segura." },
 ];
 
 export function Services({ onCTAClick }: Props) {
