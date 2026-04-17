@@ -514,6 +514,11 @@ export function MultiStepModal({ open, onClose }: Props) {
                       {form.formState.errors.lgpd.message as string}
                     </p>
                   )}
+                  {submitError && (
+                    <p className="text-xs text-warning-foreground bg-warning/30 px-3 py-1.5 rounded-lg">
+                      ❌ {submitError}
+                    </p>
+                  )}
 
                   <div className="flex items-center justify-between gap-3 pt-2">
                     <button
