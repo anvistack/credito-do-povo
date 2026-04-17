@@ -10,7 +10,7 @@ export function Footer() {
             style={{ filter: "brightness(0) invert(1)" }}
           />
           <p className="mt-4 text-sm text-white/70">
-            Crédito honesto, atendimento humano. Para quem nunca foi tratado bem por banco.
+            Crédito honesto, atendimento humano.
           </p>
         </div>
         <div>
@@ -26,8 +26,17 @@ export function Footer() {
         <div>
           <div className="font-bold text-white mb-3">Contato</div>
           <ul className="space-y-2 text-sm">
-            <li>📞 0800 000 0000</li>
-            <li>💬 WhatsApp</li>
+            <li>📞 (16) 98119-500</li>
+            <li>
+              <a
+                href="https://wa.me/551698119500"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white"
+              >
+                💬 WhatsApp
+              </a>
+            </li>
             <li>✉️ contato@creditodopovo.com.br</li>
           </ul>
         </div>

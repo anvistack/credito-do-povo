@@ -15,7 +15,7 @@ const PERFIS = [
   { value: "Aposentado(a)", label: "Aposentado(a)", emoji: "👴" },
   { value: "Pensionista INSS", label: "Pensionista INSS", emoji: "🧓" },
   { value: "Trabalhador CLT", label: "Trabalhador CLT", emoji: "👔" },
-  { value: "Empresa", label: "Empresa", emoji: "🏢" },
+  { value: "Beneficiário LOAS", label: "Beneficiário LOAS", emoji: "🏛️" },
 ];
 
 const SERVICOS = [
@@ -25,7 +25,20 @@ const SERVICOS = [
   { value: "Refinanciamento", label: "Refinanciamento", emoji: "♻️" },
   { value: "Portabilidade", label: "Portabilidade", emoji: "🔄" },
   { value: "Cartão", label: "Cartão", emoji: "💳" },
+  { value: "Seguro Veicular", label: "Seguro Veicular", emoji: "🚗" },
+  { value: "Consórcio", label: "Consórcio", emoji: "🤝" },
+  { value: "Saque FGTS", label: "Saque FGTS", emoji: "💰" },
 ];
+
+const TIPOS_CONSORCIO = ["Veículo", "Imóvel", "Outros"] as const;
+const TEMPOS_CLT = [
+  "Menos de 1 ano",
+  "1 a 3 anos",
+  "3 a 5 anos",
+  "Mais de 5 anos",
+] as const;
+
+const SKIP_VALOR_SERVICOS = new Set(["Seguro Veicular"]);
 
 const COMO_CONHECEU = [
   { value: "Instagram", label: "Instagram", emoji: "📸" },
@@ -39,20 +52,34 @@ const COMO_CONHECEU = [
 
 const QUICK_VALUES = [1000, 5000, 10000, 30000, 50000];
 
-const dadosSchema = z.object({
-  nome: z.string().trim().min(3, "Informe seu nome completo").max(120),
-  cpf: z.string().refine((v) => isValidCPF(v), "CPF inválido"),
-  whatsapp: z.string().refine((v) => v.replace(/\D/g, "").length >= 10, "WhatsApp inválido"),
-  email: z.string().trim().email("E-mail inválido").max(255),
-  data_nascimento: z
-    .string()
-    .min(1, "Informe sua data de nascimento")
-    .refine((v) => calcAge(v) >= 18, "Você deve ter pelo menos 18 anos")
-    .refine((v) => calcAge(v) <= 110, "Data inválida"),
-  cidade: z.string().trim().min(2, "Informe sua cidade").max(80),
-  estado: z.string().refine((v) => ESTADOS.includes(v), "Selecione um estado"),
-  lgpd: z.literal(true, { message: "Aceite os termos para continuar" }),
-});
+const PLACA_REGEX = /^[A-Z]{3}-?\d[A-Z0-9]\d{2}$/;
+
+const dadosSchema = z
+  .object({
+    nome: z.string().trim().min(3, "Informe seu nome completo").max(120),
+    cpf: z.string().refine((v) => isValidCPF(v), "CPF inválido"),
+    whatsapp: z.string().refine((v) => v.replace(/\D/g, "").length >= 10, "WhatsApp inválido"),
+    email: z.string().trim().email("E-mail inválido").max(255),
+    data_nascimento: z
+      .string()
+      .min(1, "Informe sua data de nascimento")
+      .refine((v) => calcAge(v) >= 18, "Você deve ter pelo menos 18 anos")
+      .refine((v) => calcAge(v) <= 110, "Data inválida"),
+    cidade: z.string().trim().min(2, "Informe sua cidade").max(80),
+    estado: z.string().refine((v) => ESTADOS.includes(v), "Selecione um estado"),
+    lgpd: z.literal(true, { message: "Aceite os termos para continuar" }),
+    // Condicionais (validados manualmente conforme o serviço)
+    proprietario_veiculo: z.string().optional(),
+    cpf_proprietario_veiculo: z.string().optional(),
+    placa_veiculo: z.string().optional(),
+    tipo_consorcio: z.string().optional(),
+    tempo_registro_clt: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // injetado via contexto externo: campos extras só serão checados no submit
+    void data;
+    void ctx;
+  });
 
 type DadosForm = z.infer<typeof dadosSchema>;
 
@@ -80,6 +107,11 @@ export function MultiStepModal({ open, onClose }: Props) {
       cidade: "",
       estado: "",
       lgpd: undefined as unknown as true,
+      proprietario_veiculo: "",
+      cpf_proprietario_veiculo: "",
+      placa_veiculo: "",
+      tipo_consorcio: "",
+      tempo_registro_clt: "",
     },
   });
 
@@ -99,6 +131,26 @@ export function MultiStepModal({ open, onClose }: Props) {
     }
   }, [open, form]);
 
+  const skipValor = SKIP_VALOR_SERVICOS.has(servico);
+  const isSeguroVeicular = servico === "Seguro Veicular";
+  const isConsorcio = servico === "Consórcio";
+  const isCltService = servico === "Crédito CLT";
+
+  const validateConditional = (dados: DadosForm): string | null => {
+    if (isSeguroVeicular) {
+      if (!dados.proprietario_veiculo?.trim())
+        return "Informe o proprietário do veículo";
+      if (!dados.cpf_proprietario_veiculo || !isValidCPF(dados.cpf_proprietario_veiculo))
+        return "CPF do proprietário inválido";
+      const placa = (dados.placa_veiculo ?? "").toUpperCase().replace(/\s/g, "");
+      if (!PLACA_REGEX.test(placa)) return "Placa inválida (ex.: AAA-0A00)";
+    }
+    if (isConsorcio && !dados.tipo_consorcio) return "Selecione o tipo de consórcio";
+    if (isCltService && !dados.tempo_registro_clt)
+      return "Selecione o tempo de registro";
+    return null;
+  };
+
   const submitLead = async (final: { como_conheceu: string }) => {
     setSubmitting(true);
     setSubmitError(null);
@@ -113,13 +165,24 @@ export function MultiStepModal({ open, onClose }: Props) {
       estado: dados.estado,
       email: dados.email.trim().toLowerCase(),
       como_conheceu: final.como_conheceu,
-      valor_pretendido: valor,
+      valor_pretendido: skipValor ? 0 : valor,
       perfil,
       servico,
       idade,
       faixa_etaria: ageGroup(idade),
       status: "novo",
       updated_at: new Date().toISOString(),
+      proprietario_veiculo: isSeguroVeicular
+        ? dados.proprietario_veiculo?.trim() || null
+        : null,
+      cpf_proprietario_veiculo: isSeguroVeicular
+        ? dados.cpf_proprietario_veiculo || null
+        : null,
+      placa_veiculo: isSeguroVeicular
+        ? (dados.placa_veiculo ?? "").toUpperCase().replace(/\s/g, "") || null
+        : null,
+      tipo_consorcio: isConsorcio ? dados.tipo_consorcio || null : null,
+      tempo_registro_clt: isCltService ? dados.tempo_registro_clt || null : null,
     });
     setSubmitting(false);
     if (error) {
@@ -135,8 +198,19 @@ export function MultiStepModal({ open, onClose }: Props) {
     return true;
   };
 
-  const goNext = () => setStep((s) => Math.min(6, s + 1));
-  const goPrev = () => setStep((s) => Math.max(1, s - 1));
+  // Step 3 (Valor) é pulado para Seguro Veicular
+  const goNext = () =>
+    setStep((s) => {
+      const next = Math.min(6, s + 1);
+      if (next === 3 && skipValor) return 4;
+      return next;
+    });
+  const goPrev = () =>
+    setStep((s) => {
+      const prev = Math.max(1, s - 1);
+      if (prev === 3 && skipValor) return 2;
+      return prev;
+    });
 
   return (
     <AnimatePresence>
@@ -262,7 +336,15 @@ export function MultiStepModal({ open, onClose }: Props) {
 
               {step === 4 && (
                 <form
-                  onSubmit={form.handleSubmit(() => goNext())}
+                  onSubmit={form.handleSubmit((dados) => {
+                    const condErr = validateConditional(dados);
+                    if (condErr) {
+                      setSubmitError(condErr);
+                      return;
+                    }
+                    setSubmitError(null);
+                    goNext();
+                  })}
                   className="space-y-4"
                   noValidate
                 >
@@ -344,6 +426,78 @@ export function MultiStepModal({ open, onClose }: Props) {
                     </Field>
                   </div>
 
+                  {isSeguroVeicular && (
+                    <div className="space-y-4 rounded-xl border border-border bg-accent/30 p-4">
+                      <div className="text-sm font-semibold text-foreground">
+                        🚗 Dados do veículo
+                      </div>
+                      <Field label="🧑 Proprietário do Veículo">
+                        <input
+                          {...form.register("proprietario_veiculo")}
+                          className="input-base"
+                          placeholder="Nome do proprietário"
+                        />
+                      </Field>
+                      <Field label="🆔 CPF do Proprietário">
+                        <IMaskInput
+                          mask="000.000.000-00"
+                          value={form.watch("cpf_proprietario_veiculo") ?? ""}
+                          onAccept={(v) =>
+                            form.setValue("cpf_proprietario_veiculo", String(v))
+                          }
+                          placeholder="000.000.000-00"
+                          className="input-base"
+                          inputMode="numeric"
+                        />
+                      </Field>
+                      <Field label="🅿️ Placa do Veículo">
+                        <IMaskInput
+                          mask={[
+                            { mask: "AAA-0A00" },
+                            { mask: "AAA0A00" },
+                          ]}
+                          prepare={(str) => str.toUpperCase()}
+                          value={form.watch("placa_veiculo") ?? ""}
+                          onAccept={(v) => form.setValue("placa_veiculo", String(v))}
+                          placeholder="AAA-0A00"
+                          className="input-base uppercase"
+                        />
+                      </Field>
+                    </div>
+                  )}
+
+                  {isConsorcio && (
+                    <Field label="📝 Tipo de Consórcio">
+                      <select
+                        {...form.register("tipo_consorcio")}
+                        className="input-base"
+                      >
+                        <option value="">Selecione</option>
+                        {TIPOS_CONSORCIO.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+
+                  {isCltService && (
+                    <Field label="⏳ Tempo de Registro">
+                      <select
+                        {...form.register("tempo_registro_clt")}
+                        className="input-base"
+                      >
+                        <option value="">Selecione</option>
+                        {TEMPOS_CLT.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+
                   <label className="flex items-start gap-2 text-xs text-muted-foreground">
                     <input
                       type="checkbox"
@@ -358,6 +512,11 @@ export function MultiStepModal({ open, onClose }: Props) {
                   {form.formState.errors.lgpd && (
                     <p className="text-xs text-warning-foreground bg-warning/30 px-3 py-1.5 rounded-lg">
                       {form.formState.errors.lgpd.message as string}
+                    </p>
+                  )}
+                  {submitError && (
+                    <p className="text-xs text-warning-foreground bg-warning/30 px-3 py-1.5 rounded-lg">
+                      ❌ {submitError}
                     </p>
                   )}
 

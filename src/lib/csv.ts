@@ -26,6 +26,11 @@ const COLUMNS: { key: keyof Lead; label: string }[] = [
   { key: "valor_pretendido", label: "Valor pretendido" },
   { key: "status", label: "Status" },
   { key: "agente", label: "Agente" },
+  { key: "proprietario_veiculo", label: "Proprietário Veículo" },
+  { key: "cpf_proprietario_veiculo", label: "CPF Proprietário" },
+  { key: "placa_veiculo", label: "Placa Veículo" },
+  { key: "tipo_consorcio", label: "Tipo Consórcio" },
+  { key: "tempo_registro_clt", label: "Tempo Registro CLT" },
 ];
 
 export function leadsToCsv(leads: Lead[]): string {
