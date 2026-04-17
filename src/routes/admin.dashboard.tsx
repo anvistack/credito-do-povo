@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { supabase, type Lead } from "@/lib/supabase";
+import { supabase, type Lead, type Agente } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,9 +38,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Search, RefreshCw, Trash2, Eye } from "lucide-react";
+import { Loader2, Search, RefreshCw, Trash2, Eye, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils-lead";
+import { downloadCsv, leadsToCsv } from "@/lib/csv";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({
@@ -65,13 +66,22 @@ function statusVariant(s?: string): "default" | "secondary" | "destructive" | "o
   }
 }
 
+type PendingChange = {
+  lead: Lead;
+  newStatus: string;
+};
+
 function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [agentes, setAgentes] = useState<Agente[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [selected, setSelected] = useState<Lead | null>(null);
   const [toDelete, setToDelete] = useState<Lead | null>(null);
+  const [pending, setPending] = useState<PendingChange | null>(null);
+  const [agenteEscolhido, setAgenteEscolhido] = useState<string>("");
+  const [savingStatus, setSavingStatus] = useState(false);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -87,8 +97,18 @@ function DashboardPage() {
     setLeads((data as Lead[]) ?? []);
   };
 
+  const fetchAgentes = async () => {
+    const { data } = await supabase
+      .from("agentes")
+      .select("*")
+      .eq("ativo", true)
+      .order("nome", { ascending: true });
+    setAgentes((data as Agente[]) ?? []);
+  };
+
   useEffect(() => {
     fetchLeads();
+    fetchAgentes();
   }, []);
 
   const filtered = useMemo(() => {
@@ -101,7 +121,8 @@ function DashboardPage() {
         l.email?.toLowerCase().includes(q) ||
         l.whatsapp?.toLowerCase().includes(q) ||
         l.cpf?.toLowerCase().includes(q) ||
-        l.cidade?.toLowerCase().includes(q)
+        l.cidade?.toLowerCase().includes(q) ||
+        l.agente?.toLowerCase().includes(q)
       );
     });
   }, [leads, search, statusFilter]);
@@ -114,19 +135,43 @@ function DashboardPage() {
     return { total, novos, convertidos, totalValor };
   }, [leads]);
 
-  const updateStatus = async (lead: Lead, status: string) => {
-    const prev = lead.status;
-    setLeads((all) => all.map((l) => (l.id === lead.id ? { ...l, status } : l)));
+  const requestStatusChange = (lead: Lead, newStatus: string) => {
+    if ((lead.status ?? "novo") === newStatus) return;
+    setAgenteEscolhido(lead.agente ?? "");
+    setPending({ lead, newStatus });
+  };
+
+  const confirmStatusChange = async () => {
+    if (!pending) return;
+    if (!agenteEscolhido) {
+      toast.error("Selecione o agente responsável");
+      return;
+    }
+    const { lead, newStatus } = pending;
+    setSavingStatus(true);
+    const prev = { status: lead.status, agente: lead.agente };
+    setLeads((all) =>
+      all.map((l) =>
+        l.id === lead.id ? { ...l, status: newStatus, agente: agenteEscolhido } : l
+      )
+    );
     const { error } = await supabase
       .from("leads")
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({
+        status: newStatus,
+        agente: agenteEscolhido,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", lead.id);
+    setSavingStatus(false);
     if (error) {
-      setLeads((all) => all.map((l) => (l.id === lead.id ? { ...l, status: prev } : l)));
+      setLeads((all) => all.map((l) => (l.id === lead.id ? { ...l, ...prev } : l)));
       toast.error("Falha ao atualizar status", { description: error.message });
-    } else {
-      toast.success("Status atualizado");
+      return;
     }
+    toast.success("Status atualizado");
+    setPending(null);
+    setAgenteEscolhido("");
   };
 
   const deleteLead = async (lead: Lead) => {
@@ -138,6 +183,17 @@ function DashboardPage() {
     setLeads((all) => all.filter((l) => l.id !== lead.id));
     toast.success("Lead excluído");
     setToDelete(null);
+  };
+
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum lead para exportar");
+      return;
+    }
+    const csv = leadsToCsv(filtered);
+    const ts = new Date().toISOString().slice(0, 10);
+    downloadCsv(`leads-${ts}.csv`, csv);
+    toast.success(`${filtered.length} lead(s) exportado(s)`);
   };
 
   return (
@@ -162,7 +218,7 @@ function DashboardPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, email, telefone, CPF, cidade..."
+                placeholder="Buscar por nome, email, telefone, CPF, cidade, agente..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -181,6 +237,10 @@ function DashboardPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" onClick={exportCsv} disabled={loading || filtered.length === 0}>
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
             <Button variant="outline" onClick={fetchLeads} disabled={loading}>
               <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
               Atualizar
@@ -210,6 +270,7 @@ function DashboardPage() {
                   <TableHead className="hidden lg:table-cell">Serviço</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Agente</TableHead>
                   <TableHead className="w-[120px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -234,7 +295,7 @@ function DashboardPage() {
                     <TableCell>
                       <Select
                         value={l.status ?? "novo"}
-                        onValueChange={(v) => updateStatus(l, v)}
+                        onValueChange={(v) => requestStatusChange(l, v)}
                       >
                         <SelectTrigger className="h-8 w-[130px]">
                           <SelectValue>
@@ -251,6 +312,9 @@ function DashboardPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {l.agente ?? "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -296,6 +360,7 @@ function DashboardPage() {
               <Field label="Como conheceu" value={selected.como_conheceu} />
               <Field label="Serviço" value={selected.servico} />
               <Field label="Perfil" value={selected.perfil} />
+              <Field label="Agente" value={selected.agente ?? "—"} />
               <Field
                 label="Valor pretendido"
                 value={formatBRL(Number(selected.valor_pretendido) || 0)}
@@ -306,6 +371,63 @@ function DashboardPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelected(null)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status change with agent selection */}
+      <Dialog
+        open={!!pending}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPending(null);
+            setAgenteEscolhido("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Atribuir agente</DialogTitle>
+            <DialogDescription>
+              Quem está alterando o status de{" "}
+              <span className="font-medium text-foreground">{pending?.lead.nome}</span> para{" "}
+              <Badge variant={statusVariant(pending?.newStatus)}>{pending?.newStatus}</Badge>?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {agentes.length === 0 ? (
+              <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                Nenhum agente ativo cadastrado. Cadastre em <strong>Agentes</strong>.
+              </div>
+            ) : (
+              <Select value={agenteEscolhido} onValueChange={setAgenteEscolhido}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um agente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agentes.map((a) => (
+                    <SelectItem key={a.id} value={a.nome}>
+                      {a.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPending(null);
+                setAgenteEscolhido("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={confirmStatusChange} disabled={savingStatus || !agenteEscolhido}>
+              {savingStatus && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
