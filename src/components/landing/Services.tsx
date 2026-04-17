@@ -4,7 +4,7 @@ const SERVICES = [
   { emoji: "🏦", title: "Consignado INSS", desc: "Para aposentados e pensionistas. Desconto direto em folha." },
   { emoji: "👔", title: "Crédito CLT", desc: "Trabalha com carteira assinada? Crédito com taxas justas." },
   { emoji: "⚡", title: "Conta de Energia", desc: "Use sua conta de luz como garantia. Aprovação em minutos." },
-  { emoji: "🧾", title: "Boleto", desc: "Quitação de boletos atrasados sem complicação." },
+  { emoji: "♻️", title: "Refinanciamento", desc: "Renove seu contrato, otimize parcelas e ganhe fôlego no orçamento." },
   { emoji: "🔄", title: "Portabilidade", desc: "Migre seu empréstimo e pague menos juros." },
   { emoji: "💳", title: "Cartão Consignado", desc: "Cartão exclusivo com desconto em folha." },
 ];

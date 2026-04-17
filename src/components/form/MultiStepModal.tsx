@@ -22,7 +22,7 @@ const SERVICOS = [
   { value: "Consignado INSS", label: "Consignado INSS", emoji: "🏦" },
   { value: "Crédito CLT", label: "Crédito CLT", emoji: "👔" },
   { value: "Conta de Energia", label: "Conta de Energia", emoji: "⚡" },
-  { value: "Boleto", label: "Boleto", emoji: "🧾" },
+  { value: "Refinanciamento", label: "Refinanciamento", emoji: "♻️" },
   { value: "Portabilidade", label: "Portabilidade", emoji: "🔄" },
   { value: "Cartão", label: "Cartão", emoji: "💳" },
 ];
