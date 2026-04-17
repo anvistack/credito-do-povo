@@ -107,6 +107,11 @@ export function MultiStepModal({ open, onClose }: Props) {
       cidade: "",
       estado: "",
       lgpd: undefined as unknown as true,
+      proprietario_veiculo: "",
+      cpf_proprietario_veiculo: "",
+      placa_veiculo: "",
+      tipo_consorcio: "",
+      tempo_registro_clt: "",
     },
   });
 
@@ -126,6 +131,26 @@ export function MultiStepModal({ open, onClose }: Props) {
     }
   }, [open, form]);
 
+  const skipValor = SKIP_VALOR_SERVICOS.has(servico);
+  const isSeguroVeicular = servico === "Seguro Veicular";
+  const isConsorcio = servico === "Consórcio";
+  const isCltService = servico === "Crédito CLT";
+
+  const validateConditional = (dados: DadosForm): string | null => {
+    if (isSeguroVeicular) {
+      if (!dados.proprietario_veiculo?.trim())
+        return "Informe o proprietário do veículo";
+      if (!dados.cpf_proprietario_veiculo || !isValidCPF(dados.cpf_proprietario_veiculo))
+        return "CPF do proprietário inválido";
+      const placa = (dados.placa_veiculo ?? "").toUpperCase().replace(/\s/g, "");
+      if (!PLACA_REGEX.test(placa)) return "Placa inválida (ex.: AAA-0A00)";
+    }
+    if (isConsorcio && !dados.tipo_consorcio) return "Selecione o tipo de consórcio";
+    if (isCltService && !dados.tempo_registro_clt)
+      return "Selecione o tempo de registro";
+    return null;
+  };
+
   const submitLead = async (final: { como_conheceu: string }) => {
     setSubmitting(true);
     setSubmitError(null);
@@ -140,13 +165,24 @@ export function MultiStepModal({ open, onClose }: Props) {
       estado: dados.estado,
       email: dados.email.trim().toLowerCase(),
       como_conheceu: final.como_conheceu,
-      valor_pretendido: valor,
+      valor_pretendido: skipValor ? 0 : valor,
       perfil,
       servico,
       idade,
       faixa_etaria: ageGroup(idade),
       status: "novo",
       updated_at: new Date().toISOString(),
+      proprietario_veiculo: isSeguroVeicular
+        ? dados.proprietario_veiculo?.trim() || null
+        : null,
+      cpf_proprietario_veiculo: isSeguroVeicular
+        ? dados.cpf_proprietario_veiculo || null
+        : null,
+      placa_veiculo: isSeguroVeicular
+        ? (dados.placa_veiculo ?? "").toUpperCase().replace(/\s/g, "") || null
+        : null,
+      tipo_consorcio: isConsorcio ? dados.tipo_consorcio || null : null,
+      tempo_registro_clt: isCltService ? dados.tempo_registro_clt || null : null,
     });
     setSubmitting(false);
     if (error) {
@@ -162,8 +198,19 @@ export function MultiStepModal({ open, onClose }: Props) {
     return true;
   };
 
-  const goNext = () => setStep((s) => Math.min(6, s + 1));
-  const goPrev = () => setStep((s) => Math.max(1, s - 1));
+  // Step 3 (Valor) é pulado para Seguro Veicular
+  const goNext = () =>
+    setStep((s) => {
+      const next = Math.min(6, s + 1);
+      if (next === 3 && skipValor) return 4;
+      return next;
+    });
+  const goPrev = () =>
+    setStep((s) => {
+      const prev = Math.max(1, s - 1);
+      if (prev === 3 && skipValor) return 2;
+      return prev;
+    });
 
   return (
     <AnimatePresence>
