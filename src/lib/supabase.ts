@@ -27,10 +27,21 @@ export type LeadInsert = {
   idade: number;
   faixa_etaria: string;
   status?: string;
+  agente?: string | null;
   updated_at?: string;
 };
 
 export type Lead = LeadInsert & {
   id: string;
   created_at: string;
+  agente?: string | null;
+};
+
+export type Agente = {
+  id: string;
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
 };

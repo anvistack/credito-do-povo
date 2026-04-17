@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Loader2, BarChart3 } from "lucide-react";
+import { LogOut, LayoutDashboard, Loader2, BarChart3, Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -74,6 +74,16 @@ function AdminLayout() {
                 <span className="inline-flex items-center gap-1.5">
                   <BarChart3 className="h-4 w-4" />
                   Relatórios
+                </span>
+              </Link>
+              <Link
+                to="/admin/agentes"
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                activeProps={{ className: "rounded-md px-3 py-1.5 text-sm bg-muted text-foreground font-medium" }}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  Agentes
                 </span>
               </Link>
             </nav>
