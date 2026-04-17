@@ -327,7 +327,7 @@ export function MultiStepModal({ open, onClose }: Props) {
                       ← Voltar
                     </button>
                     <button
-                      onClick={goNext}
+                      onClick={() => goNext()}
                       className="px-6 h-12 rounded-xl gradient-hero text-primary-foreground font-semibold shadow-brand hover:opacity-95"
                     >
                       Continuar →
