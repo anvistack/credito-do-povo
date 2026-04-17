@@ -336,7 +336,15 @@ export function MultiStepModal({ open, onClose }: Props) {
 
               {step === 4 && (
                 <form
-                  onSubmit={form.handleSubmit(() => goNext())}
+                  onSubmit={form.handleSubmit((dados) => {
+                    const condErr = validateConditional(dados);
+                    if (condErr) {
+                      setSubmitError(condErr);
+                      return;
+                    }
+                    setSubmitError(null);
+                    goNext();
+                  })}
                   className="space-y-4"
                   noValidate
                 >
@@ -417,6 +425,78 @@ export function MultiStepModal({ open, onClose }: Props) {
                       </select>
                     </Field>
                   </div>
+
+                  {isSeguroVeicular && (
+                    <div className="space-y-4 rounded-xl border border-border bg-accent/30 p-4">
+                      <div className="text-sm font-semibold text-foreground">
+                        🚗 Dados do veículo
+                      </div>
+                      <Field label="🧑 Proprietário do Veículo">
+                        <input
+                          {...form.register("proprietario_veiculo")}
+                          className="input-base"
+                          placeholder="Nome do proprietário"
+                        />
+                      </Field>
+                      <Field label="🆔 CPF do Proprietário">
+                        <IMaskInput
+                          mask="000.000.000-00"
+                          value={form.watch("cpf_proprietario_veiculo") ?? ""}
+                          onAccept={(v) =>
+                            form.setValue("cpf_proprietario_veiculo", String(v))
+                          }
+                          placeholder="000.000.000-00"
+                          className="input-base"
+                          inputMode="numeric"
+                        />
+                      </Field>
+                      <Field label="🅿️ Placa do Veículo">
+                        <IMaskInput
+                          mask={[
+                            { mask: "AAA-0A00" },
+                            { mask: "AAA0A00" },
+                          ]}
+                          prepare={(str) => str.toUpperCase()}
+                          value={form.watch("placa_veiculo") ?? ""}
+                          onAccept={(v) => form.setValue("placa_veiculo", String(v))}
+                          placeholder="AAA-0A00"
+                          className="input-base uppercase"
+                        />
+                      </Field>
+                    </div>
+                  )}
+
+                  {isConsorcio && (
+                    <Field label="📝 Tipo de Consórcio">
+                      <select
+                        {...form.register("tipo_consorcio")}
+                        className="input-base"
+                      >
+                        <option value="">Selecione</option>
+                        {TIPOS_CONSORCIO.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+
+                  {isCltService && (
+                    <Field label="⏳ Tempo de Registro">
+                      <select
+                        {...form.register("tempo_registro_clt")}
+                        className="input-base"
+                      >
+                        <option value="">Selecione</option>
+                        {TEMPOS_CLT.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
 
                   <label className="flex items-start gap-2 text-xs text-muted-foreground">
                     <input
