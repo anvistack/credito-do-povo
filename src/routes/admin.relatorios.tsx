@@ -4,6 +4,13 @@ import { supabase, type Lead } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -53,9 +60,26 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): CountRow[] {
     .sort((a, b) => b.value - a.value);
 }
 
+type PeriodKey = "7d" | "30d" | "90d" | "all";
+
+const PERIOD_LABELS: Record<PeriodKey, string> = {
+  "7d": "Últimos 7 dias",
+  "30d": "Últimos 30 dias",
+  "90d": "Últimos 90 dias",
+  all: "Todo o período",
+};
+
+const PERIOD_DAYS: Record<PeriodKey, number | null> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+  all: null,
+};
+
 function RelatoriosPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<PeriodKey>("30d");
 
   useEffect(() => {
     (async () => {
@@ -69,17 +93,28 @@ function RelatoriosPage() {
     })();
   }, []);
 
+  const filteredLeads = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (days === null) return leads;
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    const cutoffMs = cutoff.getTime();
+    return leads.filter((l) => new Date(l.created_at).getTime() >= cutoffMs);
+  }, [leads, period]);
+
   const perDay = useMemo(() => {
+    const days = PERIOD_DAYS[period] ?? 30;
     const map = new Map<string, number>();
-    for (const l of leads) {
+    for (const l of filteredLeads) {
       const d = new Date(l.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       map.set(key, (map.get(key) ?? 0) + 1);
     }
-    // Fill last 30 days
     const today = new Date();
     const out: { date: string; label: string; total: number }[] = [];
-    for (let i = 29; i >= 0; i--) {
+    const span = period === "all" ? Math.max(30, days) : days;
+    for (let i = span - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -90,12 +125,12 @@ function RelatoriosPage() {
       });
     }
     return out;
-  }, [leads]);
+  }, [filteredLeads, period]);
 
-  const perServico = useMemo(() => groupBy(leads, (l) => l.servico), [leads]);
-  const perPerfil = useMemo(() => groupBy(leads, (l) => l.perfil), [leads]);
-  const perFaixa = useMemo(() => groupBy(leads, (l) => l.faixa_etaria), [leads]);
-  const perEstado = useMemo(() => groupBy(leads, (l) => l.estado), [leads]);
+  const perServico = useMemo(() => groupBy(filteredLeads, (l) => l.servico), [filteredLeads]);
+  const perPerfil = useMemo(() => groupBy(filteredLeads, (l) => l.perfil), [filteredLeads]);
+  const perFaixa = useMemo(() => groupBy(filteredLeads, (l) => l.faixa_etaria), [filteredLeads]);
+  const perEstado = useMemo(() => groupBy(filteredLeads, (l) => l.estado), [filteredLeads]);
 
   if (loading) {
     return (
@@ -107,16 +142,32 @@ function RelatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
-        <p className="text-sm text-muted-foreground">
-          Análise dos {leads.length} {leads.length === 1 ? "lead" : "leads"} captados.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">
+            Análise de {filteredLeads.length}{" "}
+            {filteredLeads.length === 1 ? "lead" : "leads"} no período selecionado
+            {period !== "all" && ` (${PERIOD_LABELS[period].toLowerCase()})`}.
+          </p>
+        </div>
+        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+          <SelectTrigger className="w-full md:w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map((k) => (
+              <SelectItem key={k} value={k}>
+                {PERIOD_LABELS[k]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Leads por dia (últimos 30 dias)</CardTitle>
+          <CardTitle className="text-base">Leads por dia ({PERIOD_LABELS[period].toLowerCase()})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-72 w-full">

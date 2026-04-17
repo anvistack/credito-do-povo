@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminAgentesRouteImport } from './routes/admin.agentes'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -40,10 +41,16 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAgentesRoute = AdminAgentesRouteImport.update({
+  id: '/agentes',
+  path: '/agentes',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/admin/agentes': typeof AdminAgentesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/admin/agentes': typeof AdminAgentesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/admin/agentes': typeof AdminAgentesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/relatorios': typeof AdminRelatoriosRoute
@@ -68,15 +77,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin/agentes'
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/relatorios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/admin/dashboard' | '/admin/login' | '/admin/relatorios'
+  to:
+    | '/'
+    | '/admin'
+    | '/admin/agentes'
+    | '/admin/dashboard'
+    | '/admin/login'
+    | '/admin/relatorios'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin/agentes'
     | '/admin/dashboard'
     | '/admin/login'
     | '/admin/relatorios'
@@ -124,16 +141,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/agentes': {
+      id: '/admin/agentes'
+      path: '/agentes'
+      fullPath: '/admin/agentes'
+      preLoaderRoute: typeof AdminAgentesRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAgentesRoute: typeof AdminAgentesRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminRelatoriosRoute: typeof AdminRelatoriosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAgentesRoute: AdminAgentesRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminRelatoriosRoute: AdminRelatoriosRoute,
@@ -148,12 +174,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
