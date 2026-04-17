@@ -48,7 +48,7 @@ export function Testimonials() {
                   <div>
                     <div className="font-bold text-foreground">{t.name}</div>
                     <div className="text-xs text-muted-foreground">{t.role}</div>
-                    <div className="text-amber-500 text-sm leading-none mt-0.5">★★★★★</div>
+                    <div className="text-warning text-sm leading-none mt-0.5">★★★★★</div>
                   </div>
                 </div>
                 <p className="text-sm text-foreground/85 leading-relaxed">"{t.text}"</p>
