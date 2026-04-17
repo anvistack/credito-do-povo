@@ -15,7 +15,7 @@ const PERFIS = [
   { value: "Aposentado(a)", label: "Aposentado(a)", emoji: "👴" },
   { value: "Pensionista INSS", label: "Pensionista INSS", emoji: "🧓" },
   { value: "Trabalhador CLT", label: "Trabalhador CLT", emoji: "👔" },
-  { value: "Empresa", label: "Empresa", emoji: "🏢" },
+  { value: "Beneficiário LOAS", label: "Beneficiário LOAS", emoji: "🏛️" },
 ];
 
 const SERVICOS = [
@@ -25,7 +25,20 @@ const SERVICOS = [
   { value: "Refinanciamento", label: "Refinanciamento", emoji: "♻️" },
   { value: "Portabilidade", label: "Portabilidade", emoji: "🔄" },
   { value: "Cartão", label: "Cartão", emoji: "💳" },
+  { value: "Seguro Veicular", label: "Seguro Veicular", emoji: "🚗" },
+  { value: "Consórcio", label: "Consórcio", emoji: "🤝" },
+  { value: "Saque FGTS", label: "Saque FGTS", emoji: "💰" },
 ];
+
+const TIPOS_CONSORCIO = ["Veículo", "Imóvel", "Outros"] as const;
+const TEMPOS_CLT = [
+  "Menos de 1 ano",
+  "1 a 3 anos",
+  "3 a 5 anos",
+  "Mais de 5 anos",
+] as const;
+
+const SKIP_VALOR_SERVICOS = new Set(["Seguro Veicular"]);
 
 const COMO_CONHECEU = [
   { value: "Instagram", label: "Instagram", emoji: "📸" },
@@ -39,20 +52,34 @@ const COMO_CONHECEU = [
 
 const QUICK_VALUES = [1000, 5000, 10000, 30000, 50000];
 
-const dadosSchema = z.object({
-  nome: z.string().trim().min(3, "Informe seu nome completo").max(120),
-  cpf: z.string().refine((v) => isValidCPF(v), "CPF inválido"),
-  whatsapp: z.string().refine((v) => v.replace(/\D/g, "").length >= 10, "WhatsApp inválido"),
-  email: z.string().trim().email("E-mail inválido").max(255),
-  data_nascimento: z
-    .string()
-    .min(1, "Informe sua data de nascimento")
-    .refine((v) => calcAge(v) >= 18, "Você deve ter pelo menos 18 anos")
-    .refine((v) => calcAge(v) <= 110, "Data inválida"),
-  cidade: z.string().trim().min(2, "Informe sua cidade").max(80),
-  estado: z.string().refine((v) => ESTADOS.includes(v), "Selecione um estado"),
-  lgpd: z.literal(true, { message: "Aceite os termos para continuar" }),
-});
+const PLACA_REGEX = /^[A-Z]{3}-?\d[A-Z0-9]\d{2}$/;
+
+const dadosSchema = z
+  .object({
+    nome: z.string().trim().min(3, "Informe seu nome completo").max(120),
+    cpf: z.string().refine((v) => isValidCPF(v), "CPF inválido"),
+    whatsapp: z.string().refine((v) => v.replace(/\D/g, "").length >= 10, "WhatsApp inválido"),
+    email: z.string().trim().email("E-mail inválido").max(255),
+    data_nascimento: z
+      .string()
+      .min(1, "Informe sua data de nascimento")
+      .refine((v) => calcAge(v) >= 18, "Você deve ter pelo menos 18 anos")
+      .refine((v) => calcAge(v) <= 110, "Data inválida"),
+    cidade: z.string().trim().min(2, "Informe sua cidade").max(80),
+    estado: z.string().refine((v) => ESTADOS.includes(v), "Selecione um estado"),
+    lgpd: z.literal(true, { message: "Aceite os termos para continuar" }),
+    // Condicionais (validados manualmente conforme o serviço)
+    proprietario_veiculo: z.string().optional(),
+    cpf_proprietario_veiculo: z.string().optional(),
+    placa_veiculo: z.string().optional(),
+    tipo_consorcio: z.string().optional(),
+    tempo_registro_clt: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // injetado via contexto externo: campos extras só serão checados no submit
+    void data;
+    void ctx;
+  });
 
 type DadosForm = z.infer<typeof dadosSchema>;
 
