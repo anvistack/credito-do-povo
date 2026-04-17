@@ -372,6 +372,28 @@ function DashboardPage() {
                 value={formatBRL(Number(selected.valor_pretendido) || 0)}
                 className="col-span-2"
               />
+              {selected.proprietario_veiculo && (
+                <Field
+                  label="🧑 Proprietário do veículo"
+                  value={selected.proprietario_veiculo}
+                  className="col-span-2"
+                />
+              )}
+              {selected.cpf_proprietario_veiculo && (
+                <Field
+                  label="🆔 CPF do proprietário"
+                  value={selected.cpf_proprietario_veiculo}
+                />
+              )}
+              {selected.placa_veiculo && (
+                <Field label="🅿️ Placa do veículo" value={selected.placa_veiculo} />
+              )}
+              {selected.tipo_consorcio && (
+                <Field label="📝 Tipo de consórcio" value={selected.tipo_consorcio} />
+              )}
+              {selected.tempo_registro_clt && (
+                <Field label="⏳ Tempo de registro CLT" value={selected.tempo_registro_clt} />
+              )}
             </div>
           )}
           <DialogFooter>

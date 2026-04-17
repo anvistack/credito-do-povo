@@ -35,6 +35,19 @@ const FIELD_ALIASES: Record<string, keyof LeadInsert> = {
   faixaetaria: "faixa_etaria",
   status: "status",
   agente: "agente",
+  proprietarioveiculo: "proprietario_veiculo",
+  proprietariodoveiculo: "proprietario_veiculo",
+  cpfproprietario: "cpf_proprietario_veiculo",
+  cpfproprietarioveiculo: "cpf_proprietario_veiculo",
+  cpfdoproprietario: "cpf_proprietario_veiculo",
+  placa: "placa_veiculo",
+  placaveiculo: "placa_veiculo",
+  placadoveiculo: "placa_veiculo",
+  tipoconsorcio: "tipo_consorcio",
+  tipodeconsorcio: "tipo_consorcio",
+  temporegistroclt: "tempo_registro_clt",
+  temporegistro: "tempo_registro_clt",
+  tempodeclt: "tempo_registro_clt",
 };
 
 export type ParsedRow = {
