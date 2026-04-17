@@ -51,7 +51,7 @@ const dadosSchema = z.object({
     .refine((v) => calcAge(v) <= 110, "Data inválida"),
   cidade: z.string().trim().min(2, "Informe sua cidade").max(80),
   estado: z.string().refine((v) => ESTADOS.includes(v), "Selecione um estado"),
-  lgpd: z.literal(true, { errorMap: () => ({ message: "Aceite os termos" }) }),
+  lgpd: z.literal(true, { message: "Aceite os termos para continuar" }),
 });
 
 type DadosForm = z.infer<typeof dadosSchema>;
