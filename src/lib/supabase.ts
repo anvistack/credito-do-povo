@@ -4,7 +4,12 @@ const SUPABASE_URL = "https://pqdtvfbuonfamhesfkms.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_zUETtWrO2yggANIXPDNwXg_Gb-b63h0";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
+    storageKey: "cdp-admin-auth",
+  },
 });
 
 export type LeadInsert = {
@@ -23,4 +28,9 @@ export type LeadInsert = {
   faixa_etaria: string;
   status?: string;
   updated_at?: string;
+};
+
+export type Lead = LeadInsert & {
+  id: string;
+  created_at: string;
 };
