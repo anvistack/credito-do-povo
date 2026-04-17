@@ -31,14 +31,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "credito-do-povo-teste" },
+      { name: "description", content: "Crédito do Povo: A Next.js app for financial solutions, featuring a landing page and admin dashboard." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "credito-do-povo-teste" },
+      { property: "og:description", content: "Crédito do Povo: A Next.js app for financial solutions, featuring a landing page and admin dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "credito-do-povo-teste" },
+      { name: "twitter:description", content: "Crédito do Povo: A Next.js app for financial solutions, featuring a landing page and admin dashboard." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8306b35e-7b8a-4642-94f9-6723ec84a476/id-preview-f9ab784e--cd255468-bc08-46e3-be57-af3d4492de40.lovable.app-1776432077799.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8306b35e-7b8a-4642-94f9-6723ec84a476/id-preview-f9ab784e--cd255468-bc08-46e3-be57-af3d4492de40.lovable.app-1776432077799.png" },
     ],
     links: [
       {
