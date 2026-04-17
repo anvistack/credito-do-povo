@@ -127,10 +127,10 @@ function RelatoriosPage() {
     return out;
   }, [filteredLeads, period]);
 
-  const perServico = useMemo(() => groupBy(leads, (l) => l.servico), [leads]);
-  const perPerfil = useMemo(() => groupBy(leads, (l) => l.perfil), [leads]);
-  const perFaixa = useMemo(() => groupBy(leads, (l) => l.faixa_etaria), [leads]);
-  const perEstado = useMemo(() => groupBy(leads, (l) => l.estado), [leads]);
+  const perServico = useMemo(() => groupBy(filteredLeads, (l) => l.servico), [filteredLeads]);
+  const perPerfil = useMemo(() => groupBy(filteredLeads, (l) => l.perfil), [filteredLeads]);
+  const perFaixa = useMemo(() => groupBy(filteredLeads, (l) => l.faixa_etaria), [filteredLeads]);
+  const perEstado = useMemo(() => groupBy(filteredLeads, (l) => l.estado), [filteredLeads]);
 
   if (loading) {
     return (
@@ -142,16 +142,32 @@ function RelatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
-        <p className="text-sm text-muted-foreground">
-          Análise dos {leads.length} {leads.length === 1 ? "lead" : "leads"} captados.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">
+            Análise de {filteredLeads.length}{" "}
+            {filteredLeads.length === 1 ? "lead" : "leads"} no período selecionado
+            {period !== "all" && ` (${PERIOD_LABELS[period].toLowerCase()})`}.
+          </p>
+        </div>
+        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+          <SelectTrigger className="w-full md:w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map((k) => (
+              <SelectItem key={k} value={k}>
+                {PERIOD_LABELS[k]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Leads por dia (últimos 30 dias)</CardTitle>
+          <CardTitle className="text-base">Leads por dia ({PERIOD_LABELS[period].toLowerCase()})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-72 w-full">
