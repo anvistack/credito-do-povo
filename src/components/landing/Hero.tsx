@@ -35,7 +35,7 @@ export function Hero({ onCTAClick }: Props) {
               Quero meu crédito agora →
             </button>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/551698119500"
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 h-14 rounded-2xl border-2 border-white/80 text-white font-semibold flex items-center justify-center gap-2 hover:bg-white/10 transition"
