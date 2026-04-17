@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Loader2 } from "lucide-react";
+import { LogOut, LayoutDashboard, Loader2, BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -55,6 +55,28 @@ function AdminLayout() {
               <LayoutDashboard className="h-5 w-5 text-primary" />
               <span>Crédito do Povo · Admin</span>
             </Link>
+            <nav className="hidden items-center gap-1 md:flex">
+              <Link
+                to="/admin/dashboard"
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                activeProps={{ className: "rounded-md px-3 py-1.5 text-sm bg-muted text-foreground font-medium" }}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Leads
+                </span>
+              </Link>
+              <Link
+                to="/admin/relatorios"
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                activeProps={{ className: "rounded-md px-3 py-1.5 text-sm bg-muted text-foreground font-medium" }}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <BarChart3 className="h-4 w-4" />
+                  Relatórios
+                </span>
+              </Link>
+            </nav>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
