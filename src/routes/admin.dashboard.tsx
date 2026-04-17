@@ -38,10 +38,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Search, RefreshCw, Trash2, Eye, Download } from "lucide-react";
+import { Loader2, Search, RefreshCw, Trash2, Eye, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils-lead";
 import { downloadCsv, leadsToCsv } from "@/lib/csv";
+import { ImportLeadsDialog } from "@/components/admin/ImportLeadsDialog";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({
@@ -82,6 +83,7 @@ function DashboardPage() {
   const [pending, setPending] = useState<PendingChange | null>(null);
   const [agenteEscolhido, setAgenteEscolhido] = useState<string>("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -237,6 +239,10 @@ function DashboardPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" onClick={() => setImportOpen(true)} disabled={loading}>
+              <Upload className="h-4 w-4" />
+              Importar CSV
+            </Button>
             <Button variant="outline" onClick={exportCsv} disabled={loading || filtered.length === 0}>
               <Download className="h-4 w-4" />
               Exportar CSV
@@ -454,6 +460,12 @@ function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImportLeadsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={fetchLeads}
+      />
     </div>
   );
 }

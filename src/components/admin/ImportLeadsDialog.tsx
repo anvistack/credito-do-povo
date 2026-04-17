@@ -162,7 +162,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onImported }: Props) {
               <div className="font-medium">{preview.fileName}</div>
               <div className="mt-1 text-xs text-muted-foreground">
                 {preview.parsed.length} linha(s) lida(s) ·{" "}
-                <span className="text-emerald-600">{validCount} válida(s)</span>
+                <span className="text-primary">{validCount} válida(s)</span>
                 {errorRows.length > 0 && (
                   <>
                     {" · "}
@@ -174,7 +174,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onImported }: Props) {
 
             <div className="rounded-md border p-3 text-xs">
               <div className="mb-1 flex items-center gap-1 font-medium">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                 Colunas reconhecidas ({preview.matchedHeaders.length})
               </div>
               <div className="text-muted-foreground">
@@ -183,7 +183,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onImported }: Props) {
               {preview.unknownHeaders.length > 0 && (
                 <>
                   <div className="mt-2 mb-1 flex items-center gap-1 font-medium">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" />
                     Colunas ignoradas ({preview.unknownHeaders.length})
                   </div>
                   <div className="text-muted-foreground">

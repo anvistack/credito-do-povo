@@ -109,7 +109,7 @@ function parseDate(v: string): string | null {
     return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
   // dd/mm/yyyy or dd-mm-yyyy
-  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (m) {
     const [, d, mo, y] = m;
     return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
