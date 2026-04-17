@@ -3,7 +3,6 @@
 
 type AvatarProps = { className?: string };
 
-const ring = "stroke-[oklch(0.71_0.20_47)]";
 
 function Frame({ children, bg = "oklch(0.96 0.04 60)" }: { children: React.ReactNode; bg?: string }) {
   return (
