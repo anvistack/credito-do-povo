@@ -198,11 +198,13 @@ export function MultiStepModal({ open, onClose }: Props) {
     return true;
   };
 
-  // Step 3 (Valor) é pulado para Seguro Veicular
-  const goNext = () =>
+  // Step 3 (Valor) é pulado para serviços em SKIP_VALOR_SERVICOS
+  const shouldSkipValor = (svc: string) => SKIP_VALOR_SERVICOS.has(svc);
+  const goNext = (overrideServico?: string) =>
     setStep((s) => {
       const next = Math.min(6, s + 1);
-      if (next === 3 && skipValor) return 4;
+      const svc = overrideServico ?? servico;
+      if (next === 3 && shouldSkipValor(svc)) return 4;
       return next;
     });
   const goPrev = () =>
@@ -254,7 +256,7 @@ export function MultiStepModal({ open, onClose }: Props) {
                     value={servico}
                     onChange={(v) => {
                       setServico(v);
-                      setTimeout(goNext, 250);
+                      setTimeout(() => goNext(v), 250);
                     }}
                   />
                   <button
@@ -325,7 +327,7 @@ export function MultiStepModal({ open, onClose }: Props) {
                       ← Voltar
                     </button>
                     <button
-                      onClick={goNext}
+                      onClick={() => goNext()}
                       className="px-6 h-12 rounded-xl gradient-hero text-primary-foreground font-semibold shadow-brand hover:opacity-95"
                     >
                       Continuar →
