@@ -23,7 +23,7 @@ WORKDIR /app
 
 # wrangler traz embutido o workerd (runtime oficial dos Cloudflare Workers).
 # Versao fixada para builds reproduziveis.
-RUN npm install -g wrangler@3.99.0 \
+RUN npm install -g wrangler@4.40.3 \
     && apk add --no-cache wget libc6-compat
 
 # Copia o build (worker + assets estaticos)
