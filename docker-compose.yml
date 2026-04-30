@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Garante rebuild limpo no Portainer (evita usar imagem antiga em cache).
+      pull: true
     image: facil-credito:latest
     container_name: facil-credito
     restart: unless-stopped
