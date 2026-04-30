@@ -21,13 +21,19 @@ RUN echo "===== dist/server =====" && ls -la dist/server || true \
 RUN test -f dist/server/wrangler.json || (echo "ERRO: dist/server/wrangler.json nao gerado" && exit 1)
 
 # ========== Stage 2: runtime Node + wrangler servindo o worker ==========
-FROM node:20-alpine AS runner
+# IMPORTANTE: usar Debian (glibc), NAO Alpine (musl).
+# O binario workerd embutido no wrangler depende de glibc; em Alpine ele falha
+# com "Error relocating ... fcntl64: symbol not found".
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
 # wrangler embute o workerd (runtime oficial dos Cloudflare Workers).
-RUN npm install -g wrangler@4.40.3 \
-    && apk add --no-cache wget libc6-compat
+# Usamos a versao mais recente para evitar bugs antigos do workerd.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g wrangler@4.86.0
 
 # Copia o build (worker + assets estaticos)
 COPY --from=builder /app/dist /app/dist
