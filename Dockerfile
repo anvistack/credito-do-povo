@@ -45,4 +45,8 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 --start-period=30s \
 
 # wrangler dev roda o worker localmente com workerd em 0.0.0.0:8787.
 # --local => 100% local, sem precisar de conta Cloudflare.
-CMD ["sh", "-c", "ls -la /app/dist/server && exec wrangler dev --config /app/dist/server/wrangler.json --ip 0.0.0.0 --port 8787 --local --no-show-interactive-dev-session"]
+# IMPORTANTE: precisa rodar DENTRO de dist/server, porque o wrangler.json
+# gerado pelo TanStack Start usa caminhos relativos (main: "./index.js",
+# assets.directory: "./assets"). Rodando de outro CWD, o worker sobe mas
+# nao acha os assets nem o index -> 404 em todas as rotas.
+CMD ["sh", "-c", "cd /app/dist/server && ls -la && exec wrangler dev --config ./wrangler.json --ip 0.0.0.0 --port 8787 --local --no-show-interactive-dev-session"]
