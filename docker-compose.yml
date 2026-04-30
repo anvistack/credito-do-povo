@@ -1,0 +1,40 @@
+# Stack do Portainer — SPA estático servido por Nginx dentro do container.
+# O Supabase é acessado pelo navegador, não precisa de variáveis no servidor.
+#
+# Como usar no Portainer:
+#   Stacks -> Add stack -> Build method:
+#     - "Repository" (recomendado): cole a URL do Git e o caminho deste arquivo.
+#     - ou "Web editor": cole este conteudo e marque "Pull image / build" na aplicação.
+#
+# Se for build pelo Portainer a partir do repositório, ele usa o Dockerfile da raiz.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: facil-credito:latest
+    container_name: facil-credito
+    restart: unless-stopped
+    ports:
+      # Mude para "80:80" se este for o único serviço web da VPS.
+      # Mantenha 8080 se houver Traefik/NPM/Caddy na frente.
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Descomente se usar Traefik na frente:
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.facil-credito.rule=Host(`seu-dominio.com`)"
+    #   - "traefik.http.routers.facil-credito.entrypoints=websecure"
+    #   - "traefik.http.routers.facil-credito.tls.certresolver=le"
+    #   - "traefik.http.services.facil-credito.loadbalancer.server.port=80"
+    # networks:
+    #   - proxy
+
+# networks:
+#   proxy:
+#     external: true
