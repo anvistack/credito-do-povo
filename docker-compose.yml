@@ -1,12 +1,19 @@
-# Stack do Portainer — SPA estático servido por Nginx dentro do container.
-# O Supabase é acessado pelo navegador, não precisa de variáveis no servidor.
+# Stack do Portainer — TanStack Start (Cloudflare Worker) rodando via wrangler+workerd.
 #
-# Como usar no Portainer:
-#   Stacks -> Add stack -> Build method:
-#     - "Repository" (recomendado): cole a URL do Git e o caminho deste arquivo.
-#     - ou "Web editor": cole este conteudo e marque "Pull image / build" na aplicação.
+# Por que wrangler e nao nginx puro?
+#   O build deste projeto gera um Cloudflare Worker (dist/server/index.js) que faz SSR
+#   e serve os assets de dist/client. Nao existe um index.html estatico para servir
+#   com nginx — o HTML e renderizado pelo worker em cada request.
+#   wrangler embute o workerd (runtime oficial dos Workers) e roda 100% local,
+#   sem precisar de conta Cloudflare nem internet.
 #
-# Se for build pelo Portainer a partir do repositório, ele usa o Dockerfile da raiz.
+# Banco de dados:
+#   O Supabase e acessado pelo navegador (src/lib/supabase.ts), entao nada de
+#   secrets/env e necessario no servidor.
+#
+# Como subir no Portainer:
+#   Stacks -> Add stack -> Repository -> apontar para este docker-compose.yml.
+#   Portainer roda o build pelo Dockerfile da raiz.
 
 services:
   web:
@@ -17,21 +24,22 @@ services:
     container_name: facil-credito
     restart: unless-stopped
     ports:
-      # Mude para "80:80" se este for o único serviço web da VPS.
+      # Mude para "80:8787" se este for o unico servico web da VPS.
       # Mantenha 8080 se houver Traefik/NPM/Caddy na frente.
-      - "8080:80"
+      - "8080:8787"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/"]
       interval: 30s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 20s
     # Descomente se usar Traefik na frente:
     # labels:
     #   - "traefik.enable=true"
     #   - "traefik.http.routers.facil-credito.rule=Host(`seu-dominio.com`)"
     #   - "traefik.http.routers.facil-credito.entrypoints=websecure"
     #   - "traefik.http.routers.facil-credito.tls.certresolver=le"
-    #   - "traefik.http.services.facil-credito.loadbalancer.server.port=80"
+    #   - "traefik.http.services.facil-credito.loadbalancer.server.port=8787"
     # networks:
     #   - proxy
 
