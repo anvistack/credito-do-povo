@@ -1,124 +1,64 @@
-# Deploy em VPS com Nginx
+# Deploy em VPS com Portainer (Docker)
 
-Este projeto roda como **SPA estático**: o build gera HTML/CSS/JS em
-`dist/client/` e o navegador conversa direto com o Supabase. Nada de
-Cloudflare/Worker/SSR no servidor — qualquer Nginx serve.
+Este projeto é um **TanStack Start** que builda como **Cloudflare Worker**
+(SSR + assets). Não é uma SPA estática, então **nginx puro não basta**: o
+HTML é renderizado pelo worker a cada request.
 
-## Por que aparecia "404 Page not found"
+A solução usada aqui: rodar o worker dentro do container com **wrangler**,
+que embute o **workerd** (runtime oficial dos Cloudflare Workers) e funciona
+100% local, sem precisar de conta Cloudflare nem internet.
 
-O TanStack Router resolve as rotas no navegador. Quando você abre
-`https://seu-dominio.com/admin/dashboard` direto, o Nginx procura um arquivo
-físico chamado `admin/dashboard` e não acha → 404.
+## O que está no container
 
-A correção é o fallback de SPA já incluído no `nginx.conf`:
+- `oven/bun:1.1-alpine` faz `bun install` + `bun run build` (gera `dist/`).
+- `node:20-alpine` instala `wrangler@4` e roda `wrangler dev --local`
+  servindo o worker em `0.0.0.0:8787`.
 
-```nginx
-location / {
-    try_files $uri $uri/ /index.html;
-}
-```
+O Supabase é acessado direto pelo navegador (`src/lib/supabase.ts`), então
+**nenhum secret/env é necessário no servidor**.
 
-Com isso o Nginx serve sempre o `index.html` e o roteamento acontece no client.
+## Subir no Portainer
 
----
+1. **Stacks → Add stack**.
+2. **Build method: Repository** → cole a URL do Git deste projeto e o
+   caminho `docker-compose.yml`.
+3. **Deploy the stack**. O Portainer roda o build do `Dockerfile` e sobe o
+   container.
 
-## Passo a passo (build na própria VPS)
+A porta padrão é `8080:8787`. Acesse `http://IP-DA-VPS:8080`.
 
-### 1. Pré-requisitos (uma vez só)
-
-```bash
-sudo apt update
-sudo apt install -y nginx rsync curl unzip
-# bun
-curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
-```
-
-### 2. Clonar o projeto
+## Build local (teste)
 
 ```bash
-git clone <url-do-repo> ~/facil-credito
-cd ~/facil-credito
+docker build -t facil-credito:latest .
+docker run --rm -p 8080:8787 facil-credito:latest
+# abra http://localhost:8080
 ```
 
-### 3. Configurar o Nginx
+## Reverse proxy (Traefik / NPM / Caddy)
 
-```bash
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/facil-credito
-sudo nano /etc/nginx/sites-available/facil-credito   # ajuste server_name
-sudo ln -sf /etc/nginx/sites-available/facil-credito /etc/nginx/sites-enabled/facil-credito
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
-```
+Aponte o proxy para a porta `8787` (interna) ou `8080` (publicada). Os
+labels prontos para Traefik estão comentados no `docker-compose.yml`.
 
-> Se ainda não tem domínio, troque `server_name seu-dominio.com www.seu-dominio.com;`
-> por `server_name _;` para aceitar o IP da VPS.
+## Atualização
 
-### 4. Buildar e publicar
+No Portainer: **Stacks → seu stack → Pull and redeploy** (ou **Update the
+stack** com `Re-pull image and redeploy`). Vai rebuildar a partir do Git.
 
-```bash
-chmod +x deploy/build-on-vps.sh
-./deploy/build-on-vps.sh
-```
+## Por que não usamos nginx puro
 
-O script faz `bun install`, `bun run build`, copia `dist/client/` para
-`/var/www/facil-credito` e recarrega o Nginx.
-
-### 5. Testar
-
-```bash
-curl -I http://localhost/                 # 200
-curl -I http://localhost/admin/login      # 200 (graças ao fallback)
-```
-
-Abra no navegador: `http://SEU-IP/` e `http://SEU-IP/admin/login`. Tente
-recarregar a página interna — não pode mais dar 404.
-
-### 6. HTTPS (recomendado)
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d seu-dominio.com -d www.seu-dominio.com
-```
-
-O Certbot adiciona o bloco 443 + redirect 80→443 automaticamente, sem
-quebrar o `try_files` que você já tem.
-
----
-
-## Atualizações futuras
-
-```bash
-cd ~/facil-credito
-git pull
-./deploy/build-on-vps.sh
-```
-
----
-
-## Por que não tiramos `@cloudflare/vite-plugin` do projeto
-
-Ele está embutido em `@lovable.dev/vite-tanstack-config` e é usado **só dentro
-do editor da Lovable** (preview/build do ambiente). O artefato final em
-`dist/client/` é 100% estático — não tem nada de Cloudflare. Removê-lo
-quebraria o editor sem nenhum benefício na VPS.
-
-A conexão com o banco está em `src/lib/supabase.ts` usando a publishable key,
-que é client-side por design e funciona em qualquer host.
+O build gera `dist/server/index.js` (worker) + `dist/client/` (assets, **sem
+`index.html`**). O `index.html` é gerado dinamicamente pelo worker em cada
+request. Servir só `dist/client/` com nginx resulta em 404 na home — foi o
+erro que você viu antes.
 
 ## Troubleshooting
 
-**404 em rota interna ao recarregar** → faltou o `try_files ... /index.html`.
-Confira que o `nginx.conf` ativo é o deste repo: `sudo nginx -T | grep try_files`.
-
-**Tela branca** → abra o DevTools (F12) → Console/Network. Geralmente é o
-caminho dos assets. Confirme que `/var/www/facil-credito/index.html` referencia
-arquivos em `/assets/...` e que essa pasta existe.
-
-**Permissão negada nos logs do nginx** → rode novamente o `build-on-vps.sh`,
-ele ajusta dono/permissões para `www-data`.
-
-**Supabase não conecta** → o erro é do navegador, não do Nginx. Verifique no
-DevTools se as requisições para `*.supabase.co` saem com status 200. URL e
-chave estão fixas em `src/lib/supabase.ts`.
+- **`dist/client/index.html nao gerado`** durante o build → era da versão
+  antiga do Dockerfile. O atual checa `dist/server/index.js`. Faça
+  `git pull` e rebuilde.
+- **Container sobe mas dá 502** → veja `docker logs facil-credito`. Se
+  aparecer warning sobre wrangler config, confirme que está usando a versão
+  atualizada do Dockerfile (wrangler@4).
+- **Supabase não conecta** → erro do navegador, não do container.
+  Verifique no DevTools (F12) se chamadas para `*.supabase.co` saem 200.
